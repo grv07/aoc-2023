@@ -94,14 +94,6 @@ fn main() {
 
     let lines = BufReader::new(File::open(file_name).expect("Error: File not found")).lines();
     get_possible_games(lines);
-
-    let input = "34 green, 69 red";
-    let play = Play::from_str(input);
-    println!("{play:?}");
-
-    // let game_i = "Game 18: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green";
-    // let game = Game::from_str(game_i);
-    // println!("{game:?}");
 }
 
 fn get_possible_games(lines: Lines<BufReader<File>>) {
@@ -121,21 +113,53 @@ fn get_possible_games(lines: Lines<BufReader<File>>) {
     };
 
     let mut sum = 0;
+    let mut sum2 = 0;
     for line in lines {
         // println!("{}", line.unwrap());
         let game = Game::from_str(&line.unwrap()).unwrap();
-        let valid_game = game.plays.iter().all(|play| {
-            game_range.red.contains(&play.red)
-                && game_range.blue.contains(&play.blue)
-                && game_range.green.contains(&play.green)
-        });
 
-        if valid_game {
-            sum += game.id;
-        }
+        let id = part1(&game_range, &game);
+        sum += id;
 
-        println!("{game:?}");
+        let id = part2(&game);
+        sum2 += id;
+
+        // println!("{game:?}");
     }
 
-    println!("{sum}");
+    println!("Part 1: {sum}");
+    println!("Part 2: {sum2}");
+}
+
+fn part1(game_range: &GameRange, game: &Game) -> usize {
+    let valid_game = game.plays.iter().all(|play| {
+        game_range.red.contains(&play.red)
+            && game_range.blue.contains(&play.blue)
+            && game_range.green.contains(&play.green)
+    });
+
+    if valid_game {
+        return game.id;
+    }
+    0
+}
+
+fn part2(game: &Game) -> i32 {
+    let mut max_g = 0;
+    let mut max_b = 0;
+    let mut max_r = 0;
+
+    for play in &game.plays {
+        if max_g < play.green {
+            max_g = play.green;
+        }
+        if max_b < play.blue {
+            max_b = play.blue;
+        }
+        if max_r < play.red {
+            max_r = play.red;
+        }
+    }
+
+    max_g * max_b * max_r
 }
