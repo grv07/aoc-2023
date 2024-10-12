@@ -1,7 +1,6 @@
 use std::collections::{HashSet, VecDeque};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
-// use std::str::Chars;
 
 fn get_file_name() -> String {
     let mut args = std::env::args();
