@@ -66,7 +66,7 @@ fn parse_file(mut lines: Lines<BufReader<File>>) {
     }
     maps.push(map);
 
-    // part1(seeds.clone(), maps.clone());
+    part1(seeds.clone(), maps.clone());
     part2(seeds, maps);
 }
 
@@ -127,100 +127,73 @@ fn split_range(this: &Range<isize>, other: &Range<isize>) -> Vec<Range<isize>> {
     vec![]
 }
 
-// fn range_in(a: &Range<isize>, b: &Range<isize>) -> Option<Range<isize>> {
-//     let (a_start, a_end) = (a.start, a.end);
-//     let (b_start, b_end) = (b.start, b.end);
-
-//     let start = a_start.max(b_start);
-//     let end = a_end.min(b_end);
-
-//     if start <= end {
-//         Some(start..end)
-//     } else {
-//         None
-//     }
-// }
-
 fn dfs(
-    mut range: Range<isize>,
+    range: Range<isize>,
     maps: &Vec<HashMap<Range<isize>, Range<isize>>>,
-    // res: isize,
+    res: &mut isize,
     level: usize,
 ) {
-    if level > 6 {
-        println!("FINAL range: {range:?}");
+    println!("");
+    println!("{:?} {}", &range, level + 1);
+    if level == 7 {
+        if *res >= range.start {
+            *res = range.start;
+            // println!("FINAL range: {res:?}");
+        }
+
         return;
     }
 
     let map = &maps[level];
 
-    println!("Checks for range {:?} map {:?}", range, map);
-    let mut nlevel = level + 1;
+    // println!("");
+    if level == 5 {
+        // println!("Checks for range {:?} in map level {:?}", map, level);
+    }
+
+    let mut splits = vec![];
     for (k, v) in map {
-        let splits = split_range(&range, &k);
-        println!("Split {splits:?} {k:?}");
+        let s_r = split_range(&range, &k);
+        if !s_r.is_empty() {
+            println!("{:?} Split: {:?} in k: {:?}", &range, &s_r, &k);
+        }
         for split in split_range(&range, &k) {
-            println!("Split: {split:?}");
             if k.contains(&split.start) {
-                let ds = split.start + v.start - k.start;
+                let d = v.start - k.start;
+                let ds = split.start + d;
                 let de = split.end + v.end - k.end;
-                println!(">> {ds:?} {de:?}");
                 let split = ds..de;
-                println!("Next call with range: {split:?}");
-                dfs(split, maps, nlevel);
-                // range = nq;
+                splits.push(split);
             } else {
-                // range = split;
-                println!("Next call with range: {split:?}");
-                dfs(split, maps, nlevel);
+                splits.push(split);
             }
         }
     }
-    dfs(range.clone(), maps, level + 1);
-}
 
-fn sol(seed: Range<isize>, maps: &RMaps) {
-    let mut q = seed.clone();
-    for map in maps.iter() {
-        println!("Map: {map:?}");
-        for (k, v) in map {
-            for split in split_range(&q, k) {
-                println!("split  on {k:?} {split:?}");
-                if k.contains(&split.start) {
-                    let ds = split.start + v.start - k.start;
-                    let de = split.end + v.end - k.end;
-                    println!("{ds:?} {de:?}");
-                    let nq = ds..de;
+    if splits.is_empty() {
+        dfs(range.clone(), maps, res, level + 1);
+        return;
+    }
 
-                    if nq.start < q.start {
-                        q = nq;
-                    }
-                } else {
-                    q = split;
-                }
-            }
-            println!("q= {q:?}");
-        }
+    let nlevel = level + 1;
+    for split in splits {
+        println!("Next call with range: {split:?}");
+        dfs(split, maps, res, nlevel.clone());
     }
 }
 
 fn part2(seeds: Vec<isize>, maps: RMaps) {
-    let mut res = isize::MAX..isize::MAX;
-
     let mut seeds = seeds.iter();
+    let mut locations = vec![];
     while let (Some(f), Some(s)) = (seeds.next(), seeds.next()) {
         let f = f.clone();
         let s = s.clone();
-        let mut q = f..(f + s);
-        // println!("{q:?}");
-        // println!("{maps:?}");
-        // sol(q, &maps);
-        dfs(
-            q, &maps, // isize::MAX,
-            0,
-        );
+        let q = f..(f + s);
+        let mut res = isize::MAX;
+        dfs(q, &maps, &mut res, 0);
+        locations.push(res);
     }
-    // println!("Part2: {res:?}");
+    println!("Locations are: {locations:?}");
 }
 
 #[cfg(test)]
@@ -229,11 +202,18 @@ mod test {
 
     #[test]
     fn split_range_test() {
-        assert_eq!(split_range(10..20, 0..30), vec![10..20]);
-        assert_eq!(split_range(0..200, 10..30), vec![0..10, 10..30, 30..200]);
-        assert_eq!(split_range(0..200, 0..30), vec![0..0, 0..30, 30..200]);
-        assert_eq!(split_range(0..20, 10..30), vec![0..10, 10..20]);
-        assert_eq!(split_range(15..40, 10..30), vec![15..30, 30..40]);
-        assert_eq!(split_range(10..40, 10..30), vec![10..10, 10..30, 30..40]);
+        // assert_eq!(split_range(10..20, 0..30), vec![10..20]);
+        // assert_eq!(split_range(0..200, 10..30), vec![0..10, 10..30, 30..200]);
+        // assert_eq!(split_range(0..200, 0..30), vec![0..0, 0..30, 30..200]);
+        // assert_eq!(split_range(0..20, 10..30), vec![0..10, 10..20]);
+        // assert_eq!(split_range(15..40, 10..30), vec![15..30, 30..40]);
+        // assert_eq!(split_range(10..40, 10..30), vec![10..10, 10..30, 30..40]);
+        assert_eq!(
+            split_range(&(2533907499..2590772674), &(2552562071..2604610343)),
+            vec![10..10, 10..30, 30..40]
+        );
+        //         2533907499..2590772674 5
+        // Split for range: [2533907499..2552562071, 2552562071..2590772674] in k: 2552562071..2604610343
+        // Split for range: [2533907499..2552562071, 2552562071..2590772674] in k: 2475393991..2552562071
     }
 }
