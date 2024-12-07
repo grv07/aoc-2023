@@ -6,6 +6,10 @@ const CARDS: [char; 13] = [
     'A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2',
 ];
 
+const CARDSJ: [char; 13] = [
+    'A', 'K', 'Q', 'T', '9', '8', '7', '6', '5', '4', '3', '2', 'J',
+];
+
 const RANKS: [i64; 7] = [11111, 1112, 122, 113, 23, 14, 5];
 
 fn get_parsed_input() -> Vec<(String, i64)> {
@@ -33,30 +37,51 @@ fn get_parsed_input() -> Vec<(String, i64)> {
 }
 
 fn main() {
-    let daya = get_parsed_input();
+    let data = get_parsed_input();
 
-    let mut input = map_by_kind(daya);
+    let mut input1 = map_by_kind(&data, false);
+    let mut input2 = map_by_kind(&data, true);
 
-    for v in input.values_mut() {
-        sort_by_position(v);
+    for v in input1.values_mut() {
+        sort_by_position(v, false);
     }
 
-    let mut res = 0;
+    for v in input2.values_mut() {
+        sort_by_position(v, true);
+    }
+
+    let mut res1 = 0;
+    let mut res2 = 0;
     let mut index = 0;
 
     for r in RANKS {
         let mut def = vec![];
-        let cards = input.get_mut(&r).unwrap_or(&mut def);
+        let cards = input1.get_mut(&r).unwrap_or(&mut def);
+
         for (_cards, bid) in cards.into_iter() {
             index = index + 1;
-            res += *bid * index;
+            res1 += *bid * index;
             // println!("{index} {cards} {bid}");
         }
     }
-    println!("Part1: {res}");
+
+    index = 0;
+    for r in RANKS {
+        let mut def = vec![];
+        let cards = input2.get_mut(&r).unwrap_or(&mut def);
+
+        for (cards, bid) in cards.into_iter() {
+            index = index + 1;
+            res2 += *bid * index;
+            println!("{index} {cards} {bid}");
+        }
+    }
+
+    println!("Part1: {res1}");
+    println!("Part2: {res2}");
 }
 
-fn map_by_kind(hands: Vec<(String, i64)>) -> HashMap<i64, Vec<(String, i64)>> {
+fn map_by_kind(hands: &Vec<(String, i64)>, jocker: bool) -> HashMap<i64, Vec<(String, i64)>> {
     let mut res: HashMap<i64, Vec<(String, i64)>> = HashMap::new();
 
     for (cards, bid) in hands.iter() {
@@ -65,8 +90,26 @@ fn map_by_kind(hands: Vec<(String, i64)>) -> HashMap<i64, Vec<(String, i64)>> {
             map.entry(h).and_modify(|x| *x += 1).or_insert(1);
         }
 
-        let mut d = map.values().collect::<Vec<&i64>>();
-        d.sort();
+        let d = if jocker {
+            let j_count = map.remove(&'J').unwrap_or_default();
+            let mut d = map.values().map(|v| v.to_owned()).collect::<Vec<i64>>();
+
+            d.sort();
+
+            if let Some(last) = d.last_mut() {
+                *last += j_count;
+            }
+
+            if d.is_empty() {
+                d.push(5);
+            }
+
+            d
+        } else {
+            let mut d = map.values().map(|v| v.to_owned()).collect::<Vec<i64>>();
+            d.sort();
+            d
+        };
 
         let mut v = 0;
         for d in d {
@@ -80,20 +123,17 @@ fn map_by_kind(hands: Vec<(String, i64)>) -> HashMap<i64, Vec<(String, i64)>> {
     res
 }
 
-fn sort_by_position(hands: &mut Vec<(String, i64)>) {
+fn sort_by_position(hands: &mut Vec<(String, i64)>, jocker: bool) {
     let sort = |(card, _): &(String, _)| {
         let mut d: [u64; 5] = [0; 5];
         for (i, c) in card.chars().enumerate() {
-            d[i] = 13 - CARDS.iter().position(|x| *x == c).unwrap() as u64;
+            let mut cards = if jocker { CARDSJ.iter() } else { CARDS.iter() };
+            d[i] = 13 - cards.position(|x| *x == c).unwrap() as u64;
         }
 
         let mut v = 0;
         for d in d {
-            if d / 10 < 1 {
-                v = v * 100 + d
-            } else {
-                v = v * 100 + d
-            }
+            v = v * 100 + d
         }
 
         v
