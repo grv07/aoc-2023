@@ -47,14 +47,65 @@ fn walk(steps: &str, nodes: &HashMap<String, (String, String)>) {
                 println!("COUNT: {count}");
                 return;
             }
-
-            // println!("{start}{step}");
         }
     }
+}
+
+fn gcd(a: i64, b: i64) -> i64 {
+    if b == 0 {
+        a
+    } else {
+        gcd(a, a % b)
+    }
+}
+
+fn lcm(a: i64, b: i64) -> i64 {
+    (a * b) / gcd(a, b)
+}
+
+fn walk2(steps: &str, nodes: &HashMap<String, (String, String)>) {
+    let mut starts = nodes
+        .keys()
+        .filter(|x| x.ends_with('A'))
+        .collect::<Vec<&String>>();
+
+    let mut res = vec![];
+    for i in 0..starts.len() {
+        let mut start = starts[i];
+        let mut count = 0;
+        for step in steps.chars().cycle() {
+            // println!("{start:?}");
+
+            if let Some(node) = nodes.get(start) {
+                count += 1;
+                if step == 'L' {
+                    start = &node.0;
+                } else {
+                    start = &node.1;
+                }
+            }
+
+            if start.ends_with('Z') {
+                println!("COUNT: {start} {count}");
+                res.push(count);
+                break;
+            }
+        }
+    }
+
+    // let mut a = res.first().unwrap();
+    // for b in res {
+    //     a = &gcd(*a, b);
+    // }
+
+    let res = res.iter().fold(1, |acc, x| lcm(*x, acc));
+
+    println!("{res:?}");
 }
 
 fn main() {
     let (input, map) = parse_input();
 
     walk(&input, &map);
+    walk2(&input, &map);
 }
