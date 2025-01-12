@@ -34,7 +34,6 @@ fn get_start(input: &Vec<Vec<char>>) -> (usize, usize) {
 }
 
 type Point<T> = (T, T);
-// type PDepth = (Point, i64);
 
 fn avail_paths(c: char) -> [(i32, i32); 2] {
     match c {
@@ -55,7 +54,6 @@ fn can_connect(input: &Vec<Vec<char>>, a: Point<usize>, b: Point<usize>) -> bool
         let temp: Point<i32> = (a.0 as i32 + i.0 as i32, a.1 as i32 + i.1 as i32);
 
         if temp.1 >= n || temp.0 < 0 {
-            println!("Point in not valid in matrix");
             continue;
         }
 
@@ -63,54 +61,39 @@ fn can_connect(input: &Vec<Vec<char>>, a: Point<usize>, b: Point<usize>) -> bool
         if temp == b {
             return true;
         }
-        // for j in &avail_paths(b) {
-        //     println!("{i:?}{j:?}");
-
-        //     if i.0 + j.0 == 0 && i.1 + j.1 == 0 {
-        //         println!("true");
-        //         return true;
-        //     }
-
-        //     println!("false");
-        // }
     }
     false
 }
 
-fn dfs(input: &Vec<Vec<char>>, s: Point<usize>, path: &mut Vec<Point<usize>>, res: &mut usize) {
+fn dfs(
+    input: &Vec<Vec<char>>,
+    mut s: Point<usize>,
+    mut prev: Point<usize>,
+    mut res: usize,
+) -> usize {
     let n = input.len() as i32;
 
-    if input[s.0][s.1] == 'S' {
-        // println!("len(): {}", path.len());
-
-        if res < &mut path.len() {
-            *res = path.len();
-        }
-        return;
-    }
-
-    for i in &avail_paths(input[s.0][s.1]) {
-        let nc = (i.0 + s.0 as i32, i.1 + s.1 as i32);
-
-        if nc.1 >= n || nc.0 < 0 {
-            // println!("Point in not valid in matrix");
-            continue;
-        }
-        let nc = (nc.0 as usize, nc.1 as usize);
-
-        if !can_connect(input, s, nc) {
-            continue;
+    loop {
+        if input[s.0][s.1] == 'S' {
+            return res;
         }
 
-        if path.contains(&nc) {
-            continue;
+        for i in &avail_paths(input[s.0][s.1]) {
+            let nc = (i.0 + s.0 as i32, i.1 + s.1 as i32);
+
+            if nc.1 >= n || nc.0 < 0 {
+                continue;
+            }
+            let nc = (nc.0 as usize, nc.1 as usize);
+
+            if nc == prev || !can_connect(input, s, nc) {
+                continue;
+            }
+
+            prev = s;
+            s = nc;
+            res += 1;
         }
-
-        path.push(nc);
-
-        dfs(input, nc, path, res);
-
-        path.pop();
     }
 }
 
@@ -127,10 +110,10 @@ fn main() {
         }
 
         let ns = (nc.0 as usize, nc.1 as usize);
-        // println!("{:?}", input[ns.0][ns.1]);
+        // println!("{}", input[nc.0 as usize][nc.1 as usize]);
 
-        dfs(&input, ns, &mut vec![ns], &mut res);
-
-        println!("{res}");
+        res = res.max(dfs(&input, ns, s, 1));
     }
+
+    println!("{res}");
 }
